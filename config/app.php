@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Sample;
+use App\Providers\SampleServiceProvider;
+
 return [
 
     /*
@@ -174,7 +177,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-
+        App\Providers\SampleServiceProvider::class,
     ],
 
     /*
