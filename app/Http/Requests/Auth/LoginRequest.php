@@ -47,7 +47,7 @@ class LoginRequest extends FormRequest
 
         if($this->routeIs('owner.*')){
             $guard = 'owners';
-        }elseif($this->routeIs('admins')){
+        }elseif($this->routeIs('admin.*')){
             $guard = 'admin';
         }else {
             $guard = 'users';
