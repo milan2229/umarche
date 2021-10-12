@@ -19,14 +19,14 @@ class ShopSeeder extends Seeder
             [
             'owner_id' => 1,
             'name' => '店名1',
-            'infomation' => 'お店情報',
+            'information' => 'お店情報',
             'filename' => '2021/01/01 11:11:11',
             'is_selling' => true
             ],
             [
             'owner_id' => 2,
             'name' => '店名2',
-            'infomation' => 'お店情報',
+            'information' => 'お店情報',
             'filename' => '2021/01/01 11:11:11',
             'is_selling' => true
             ],
