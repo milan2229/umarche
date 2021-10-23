@@ -3,18 +3,39 @@
 namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
+use App\Models\Image;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
 
 class ImageController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    public function __construct()
+    {
+        // オーナーでログインしているかの確認
+        $this->middleware('auth:owners');
+
+        $this->middleware(function ($request, $next){
+
+            $id = $request->route()->parameter('image');
+            if(!is_null($id)){ // null判定
+            $imagesOwnerId = Image::findOrFail($id)->owner->id;
+                    $imageId = (int)$imagesOwnerId; // キャスト 文字列→数値に型変換
+                    // $ownerId = Auth::id();
+                    if($imageId !== Auth::id()){ // 同じでなかったら
+                    abort(404); // 404画面表示
+                    }
+            }
+            return $next($request);
+        });
+    }
+
+
     public function index()
     {
-        //
+        $images = Image::where('owner_id', Auth::id())->orderBy('updated_at', 'desc')->paginate(20);
+
+        return view('owner.images.index', compact('images'));
     }
 
     /**
