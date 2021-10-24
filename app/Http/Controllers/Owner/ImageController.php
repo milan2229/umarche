@@ -110,7 +110,7 @@ class ImageController extends Controller
     public function destroy($id)
     {
         //削除処理をする前にstorageの画像を削除する必要がある。
-        $image = Image::find($id);//Imageのインスタンスをとる
+        $image = Image::findOrFail($id);//Imageのインスタンスをとる
         $filePath = 'public/products/' . $image->filename;//パスを表記して画像のありかを示す
         
         if(Storage::exists($filePath)){
