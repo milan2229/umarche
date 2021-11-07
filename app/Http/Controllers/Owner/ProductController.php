@@ -19,16 +19,16 @@ class ProductController extends Controller
         // オーナーでログインしているかの確認
         $this->middleware('auth:owners');
 
-        $this->middleware(function ($request, $next){
+        $this->middleware(function ($request, $next) {
 
             $id = $request->route()->parameter('product');
-            if(!is_null($id)){ // null判定
-            $productsOwnerId = Product::findOrFail($id)->shop->owner->id;
-                    $productId = (int)$productsOwnerId; // キャスト 文字列→数値に型変換
-                    // $ownerId = Auth::id();
-                    if($productId !== Auth::id()){ // 同じでなかったら
+            if (!is_null($id)) { // null判定
+                $productsOwnerId = Product::findOrFail($id)->shop->owner->id;
+                $productId = (int)$productsOwnerId; // キャスト 文字列→数値に型変換
+                // $ownerId = Auth::id();
+                if ($productId !== Auth::id()) { // 同じでなかったら
                     abort(404); // 404画面表示
-                    }
+                }
             }
             return $next($request);
         });
@@ -59,16 +59,16 @@ class ProductController extends Controller
     public function create()
     {
         $shops = Shop::where('owner_id', Auth::id())
-        ->select('id', 'name')
-        ->get();
+            ->select('id', 'name')
+            ->get();
 
         $images = Image::where('owner_id', Auth::id())
-        ->select('id', 'title', 'filename')
-        ->orderBy('updated_at', 'desc')
-        ->get();
+            ->select('id', 'title', 'filename')
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
         $categories = PrimaryCategory::with('secondary')
-        ->get();
+            ->get();
 
         return view('owner.products.create', compact('shops', 'images', 'categories'));
     }
