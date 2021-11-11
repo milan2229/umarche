@@ -10,6 +10,7 @@ use App\Models\Product;
 class Shop extends Model
 {
     use HasFactory;
+    // protected $table = 'shops';
 
     protected $fillable = [
         'owner_id',

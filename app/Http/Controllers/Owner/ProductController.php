@@ -7,8 +7,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Image;
 use App\Models\Product;
-use App\Models\SecondaryCategory;
+use App\Models\Shop;
+use App\Models\PrimaryCategory;
 use App\Models\Owner;
+use App\Models\Stock;
+use Illuminate\Support\Facades\DB;
+use Throwable;
+use Illuminate\Support\Facades\Log;
+
+
 
 class ProductController extends Controller
 {
@@ -18,16 +25,16 @@ class ProductController extends Controller
         // オーナーでログインしているかの確認
         $this->middleware('auth:owners');
 
-        $this->middleware(function ($request, $next){
+        $this->middleware(function ($request, $next) {
 
             $id = $request->route()->parameter('product');
-            if(!is_null($id)){ // null判定
-            $productsOwnerId = Product::findOrFail($id)->shop->owner->id;
-                    $productId = (int)$productsOwnerId; // キャスト 文字列→数値に型変換
-                    // $ownerId = Auth::id();
-                    if($productId !== Auth::id()){ // 同じでなかったら
+            if (!is_null($id)) { // null判定
+                $productsOwnerId = Product::findOrFail($id)->shop->owner->id;
+                $productId = (int)$productsOwnerId; // キャスト 文字列→数値に型変換
+                // $ownerId = Auth::id();
+                if ($productId !== Auth::id()) { // 同じでなかったら
                     abort(404); // 404画面表示
-                    }
+                }
             }
             return $next($request);
         });
@@ -57,7 +64,19 @@ class ProductController extends Controller
      */
     public function create()
     {
-        //
+        $shops = Shop::where('owner_id', Auth::id())
+            ->select('id', 'name')
+            ->get();
+
+        $images = Image::where('owner_id', Auth::id())
+            ->select('id', 'title', 'filename')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        $categories = PrimaryCategory::with('secondary')
+            ->get();
+
+        return view('owner.products.create', compact('shops', 'images', 'categories'));
     }
 
     /**
@@ -68,7 +87,48 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:50',
+            'information' => 'required|string|max:1000',
+            'price' => 'required|integer',
+            'sort_order' => 'nullable|integer',
+            'quantity' => 'required|integer',
+            'shop_id' => 'required|exists:shops,id',
+            'category' => 'required|exists:secondary_categories,id',
+            'image1' => 'nullable|exists:images,id',
+            'image2' => 'nullable|exists:images,id',
+            'image3' => 'nullable|exists:images,id',
+            'image4' => 'nullable|exists:images,id',
+            'is_selling' => 'required'
+        ]);
+
+        try {
+            DB::transaction(function () use ($request) {
+                $product = Product::create([
+                    'name' => $request->name,
+                    'information' => $request->information,
+                    'price' => $request->price,
+                    'sort_order' => $request->sort_order,
+                    'shop_id' => $request->shop_id,
+                    'secondary_category_id' => $request->category, //テーブルのカラム名がsecondary_category_idで、categoryがselectのname属性。
+                    'image1' => $request->image1,
+                    'image2' => $request->image2,
+                    'image3' => $request->image3,
+                    'image4' => $request->image4,
+                    'is_selling' => $request->is_selling
+                ]);
+
+                Stock::create([
+                    'product_id' => $product->id,
+                    'type' => 1,
+                    'quantity' => $request->quantity
+                ]);
+            }, 2);
+        } catch (Throwable $e) {
+            Log::error($e);
+            throw $e;
+        }
+        return redirect()->route('owner.products.index')->with(['message' => '商品登録をしました。', 'status' => 'info']);
     }
 
     /**
