@@ -46,15 +46,18 @@ class ProductController extends Controller
         //ログインしているオーナーが作っているproductを全て取得できる
         // $products = Owner::findOrFail(Auth::id())->shop->product;
         //リレーションの情報をshopでつなぐ
-        $ownerInfo = Owner::with('shop.product.imageFirst')->where('id', Auth::id())->get();
-        // dd($ownerInfo);
+        $ownerInfo = Owner::with('shop.product.imageFirst')
+            ->where('id', Auth::id())->get();        // dd($ownerInfo);
         // foreach($ownerInfo as $owner){
         //     // dd($owner->shop->product);
         //     foreach($owner->shop->product as $product){
         //         dd($product->imageFirst->filename);
         //     }
         // }
-        return view('owner.products.index', compact('ownerInfo'));
+        return view(
+            'owner.products.index',
+            compact('ownerInfo')
+        );
     }
 
     /**
@@ -131,28 +134,29 @@ class ProductController extends Controller
         return redirect()->route('owner.products.index')->with(['message' => '商品登録をしました。', 'status' => 'info']);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
-        //
-    }
+        $product = Product::findOrFail($id);
+        $quantity = Stock::where('product_id', $product->id)
+            ->sum('quantity');
 
+        $shops = Shop::where('owner_id', Auth::id())
+            ->select('id', 'name')
+            ->get();
+
+        $images = Image::where('owner_id', Auth::id())
+            ->select('id', 'title', 'filename')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        $categories = PrimaryCategory::with('secondary')
+            ->get();
+
+        return view(
+            'owner.products.edit',
+            compact('product', 'quantity', 'shops', 'images', 'categories')
+        );
+    }
     /**
      * Update the specified resource in storage.
      *
