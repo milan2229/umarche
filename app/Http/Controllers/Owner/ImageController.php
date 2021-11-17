@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Image;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage; 
+use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\uploadImageRequest;
 use App\Services\ImageService;
 
@@ -19,16 +20,16 @@ class ImageController extends Controller
         // オーナーでログインしているかの確認
         $this->middleware('auth:owners');
 
-        $this->middleware(function ($request, $next){
+        $this->middleware(function ($request, $next) {
 
             $id = $request->route()->parameter('image');
-            if(!is_null($id)){ // null判定
-            $imagesOwnerId = Image::findOrFail($id)->owner->id;
-                    $imageId = (int)$imagesOwnerId; // キャスト 文字列→数値に型変換
-                    // $ownerId = Auth::id();
-                    if($imageId !== Auth::id()){ // 同じでなかったら
+            if (!is_null($id)) { // null判定
+                $imagesOwnerId = Image::findOrFail($id)->owner->id;
+                $imageId = (int)$imagesOwnerId; // キャスト 文字列→数値に型変換
+                // $ownerId = Auth::id();
+                if ($imageId !== Auth::id()) { // 同じでなかったら
                     abort(404); // 404画面表示
-                    }
+                }
             }
             return $next($request);
         });
@@ -62,17 +63,17 @@ class ImageController extends Controller
     {
         $imageFiles = $request->file('files');
         // dd($$imageFiles = $request->file('files'));
-        if(!is_null($imageFiles)) {
-            foreach($imageFiles as $imageFile){
+        if (!is_null($imageFiles)) {
+            foreach ($imageFiles as $imageFile) {
                 $fileNameToStore = ImageService::upload($imageFile, 'products');
                 Image::create([
                     'owner_id' => Auth::id(),
                     'filename' => $fileNameToStore
-                    ]); 
-                }
+                ]);
+            }
         }
 
-        return redirect()->route('owner.images.index')->with(['message'=>'画像登録を実施しました。','status'=>'info']);
+        return redirect()->route('owner.images.index')->with(['message' => '画像登録を実施しました。', 'status' => 'info']);
     }
 
     public function edit($id)
@@ -94,11 +95,11 @@ class ImageController extends Controller
             'title' => ['string', 'max:50']
         ]);
 
-    $image = Image::findOrFail($id);
-    $image->title = $request->title;
-    $image->save();
-    
-    return redirect()->route('owner.images.index')->with(['message'=>'画像情報を更新しました。','status'=>'info']);
+        $image = Image::findOrFail($id);
+        $image->title = $request->title;
+        $image->save();
+
+        return redirect()->route('owner.images.index')->with(['message' => '画像情報を更新しました。', 'status' => 'info']);
     }
 
     /**
@@ -110,15 +111,42 @@ class ImageController extends Controller
     public function destroy($id)
     {
         //削除処理をする前にstorageの画像を削除する必要がある。
-        $image = Image::findOrFail($id);//Imageのインスタンスをとる
-        $filePath = 'public/products/' . $image->filename;//パスを表記して画像のありかを示す
-        
-        if(Storage::exists($filePath)){
-            Storage::delete('file','otherFile');
+        $image = Image::findOrFail($id); //Imageのインスタンスをとる
+        $filePath = 'public/products/' . $image->filename; //パスを表記して画像のありかを示す
+
+        $imageInProducts = Product::where('image1', $image->id)//image1~4で画像を使っているか判定しnullにする。
+            ->orWhere('image2', $image->id)
+            ->orWhere('image3', $image->id)
+            ->orWhere('image4', $image->id)
+            ->get();
+
+        if ($imageInProducts) {
+            $imageInProducts->each(function ($product) use ($image) {
+                if ($product->image1 === $image->id) {
+                    $product->image1 = null;
+                    $product->save();
+                }
+                if ($product->image2 === $image->id) {
+                    $product->image2 = null;
+                    $product->save();
+                }
+                if ($product->image3 === $image->id) {
+                    $product->image3 = null;
+                    $product->save();
+                }
+                if ($product->image4 === $image->id) {
+                    $product->image4 = null;
+                    $product->save();
+                }
+            });
+        }
+
+        if (Storage::exists($filePath)) {
+            Storage::delete('file', 'otherFile');
         }
 
         Image::findOrFail($id)->delete();
 
-        return redirect()->route('owner.images.index')->with(['message'=>'画像を削除しました。','status'=>'alert']);
+        return redirect()->route('owner.images.index')->with(['message' => '画像を削除しました。', 'status' => 'alert']);
     }
 }
