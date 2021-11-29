@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 //     return view('owner.welcome');
 // });
 
-Route::prefix('shop')->
+Route::prefix('shops')->
         middleware('auth:owners')->group(function(){
                 Route::get('index', [ShopController::class,'index'])->name('shops.index');
                 Route::get('edit/{shop}',[ShopController::class, 'edit'])->name('shops.edit');
