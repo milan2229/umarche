@@ -121,11 +121,25 @@ class Product extends Model
 
     public function scopeSelectCategory($query, $categoryId)
     {
-        if($categoryId !== '0')
-        {
+        if ($categoryId !== '0') {
             return $query->where('secondary_category_id', $categoryId);
         } else {
-            return ;
+            return;
+        }
+    }
+
+    public function scopeSearchKeyword($query, $keyword)
+    {
+        if (!is_null($keyword)) {
+            $spaceConvert = mb_convert_kana($keyword, 's'); // 全角スペースを半角に
+            $keywords = preg_split('/[\s]+/', $spaceConvert, -1, PREG_SPLIT_NO_EMPTY); //空白で区切る
+            foreach ($keywords as $word) //単語をループで回す
+            {
+                $query->where('products.name', 'like', '%' . $word . '%'); //曖昧検索で文字列の前後に%をつける
+            }
+            return $query;
+        } else {
+            return;
         }
     }
 }
