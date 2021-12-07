@@ -44,7 +44,7 @@ class ItemController extends Controller
         $categories = PrimaryCategory::with('secondary')
             ->get();
 
-            SendThanksMail::dispatch();
+            // SendThanksMail::dispatch();
 
         return view('user.index', compact('products','categories'));
     }
